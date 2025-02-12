@@ -1,15 +1,8 @@
 from calendar import c
 import os
 
-import re
 from string import ascii_uppercase
-from tkinter import NO
 from openpyxl import Workbook, load_workbook
-from requests_toolbelt import NonMultipartContentTypeException
-
-
-def get_value_cells():
-    pass
 
 
 def find_xlsx_files(directory: str) -> list:
@@ -21,22 +14,13 @@ def find_xlsx_files(directory: str) -> list:
     return xlsx_files
 
 
-
-
-
-
-
 class Book:
     def __init__(self) -> None:
         self.counter_row = 1
 
-    def cuts_numbers(self, text:str):
-        chars = ''
-        for i in text:
-            if not i.isdigit():
-                chars += i
-        return chars
-
+    def _cuts_numbers(self, text: str):
+        """Обрезает цифры, оставляет буквы для Ячеек"""
+        return "".join([char for char in text if not char.isdigit()])
 
     def set_book(self, filename: str) -> dict[str]:
         wb = load_workbook(filename=filename)
@@ -64,7 +48,7 @@ class Book:
                     for cell in coll:
                         # if not cell.value:
                         #     continue
-                        coordinate = self.cuts_numbers(cell.coordinate)
+                        coordinate = self._cuts_numbers(cell.coordinate)
                         book.setdefault(f"{coordinate}{self.counter_row}", cell.value)
                         # book.setdefault(
                         #     f"{ascii_uppercase[counter_col]}{self.counter_row}", cell.value
@@ -74,13 +58,12 @@ class Book:
                     #     f"{ascii_uppercase[counter_col]}{self.counter_row}", order
                     # )
                     book.setdefault(f"AW{self.counter_row}", order)
-                        
+
                     counter_col = 0
                 self.counter_row += 1
             else:
                 break
         return book
-    
 
     def create_new_book(self, data: dict[str]) -> None:
         wb_new = Workbook()
@@ -90,8 +73,6 @@ class Book:
             sheet[k] = v
 
         wb_new.save("report.xlsx")
-
-
 
 
 def main():
@@ -104,4 +85,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print(bk.cuts_numbers("FF23232"))
     main()
