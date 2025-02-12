@@ -1,22 +1,23 @@
-from calendar import c
 import os
+from click import pause
+import gs
+from tqdm import tqdm
 
-from string import ascii_uppercase
 from openpyxl import Workbook, load_workbook
 
 
 def find_xlsx_files(directory: str) -> list:
-    xlsx_files = []
-
-    for file in os.listdir(directory):
-        if file.endswith(".xlsx"):
-            xlsx_files.append(f"{directory}\{file}")
-    return xlsx_files
+    """Формирует список path где лежат файлы excel"""
+    return [
+        f"{directory}\{file}"
+        for file in os.listdir(directory)
+        if file.endswith(".xlsx")
+    ]
 
 
 class Book:
     def __init__(self) -> None:
-        self.counter_row = 1
+        self.counter_row = 1  # Счетчик для row
 
     def _cuts_numbers(self, text: str):
         """Обрезает цифры, оставляет буквы для Ячеек"""
@@ -35,7 +36,6 @@ class Book:
 
         id_cell = 43
         counter_col = 0  # Счетчик для col
-        # self.counter_row = 1 # Счетчик для row
         book = {}
 
         while True:
@@ -46,22 +46,15 @@ class Book:
             if sheet_ranges[id_coll_start].value is not None:
                 for coll in sheet_ranges[id_coll_start:id_coll_end]:
                     for cell in coll:
-                        # if not cell.value:
-                        #     continue
                         coordinate = self._cuts_numbers(cell.coordinate)
                         book.setdefault(f"{coordinate}{self.counter_row}", cell.value)
-                        # book.setdefault(
-                        #     f"{ascii_uppercase[counter_col]}{self.counter_row}", cell.value
-                        # )
                         counter_col += 1
-                    # book.setdefault(
-                    #     f"{ascii_uppercase[counter_col]}{self.counter_row}", order
-                    # )
                     book.setdefault(f"AW{self.counter_row}", order)
 
                     counter_col = 0
                 self.counter_row += 1
             else:
+                wb.close()
                 break
         return book
 
@@ -79,11 +72,15 @@ def main():
     data = {}
 
     bk = Book()
-    for path in find_xlsx_files(r"C:\Projects\auto_exc\data"):
+    # file_list = find_xlsx_files(os.getcwd())
+    file_list = find_xlsx_files(r'C:\Projects\auto_exc\data')
+    for path in tqdm(file_list):
         data.update(bk.set_book(path))
     bk.create_new_book(data)
 
 
 if __name__ == "__main__":
-    print(bk.cuts_numbers("FF23232"))
-    main()
+    try:
+        main()
+    except:
+        pause(10)
