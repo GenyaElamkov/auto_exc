@@ -1,15 +1,14 @@
 import os
-from click import pause
-import gs
-from tqdm import tqdm
+import gc
 
+from tqdm import tqdm
 from openpyxl import Workbook, load_workbook
 
 
 def find_xlsx_files(directory: str) -> list:
     """Формирует список path где лежат файлы excel"""
     return [
-        f"{directory}\{file}"
+        f"{directory}\\{file}"
         for file in os.listdir(directory)
         if file.endswith(".xlsx")
     ]
@@ -24,7 +23,8 @@ class Book:
         return "".join([char for char in text if not char.isdigit()])
 
     def set_book(self, filename: str) -> dict[str]:
-        wb = load_workbook(filename=filename)
+        wb = load_workbook(filename=filename, read_only=True)
+        # read_only — режим для отложенной загрузки, экономить оперативную память
         sheet_ranges = wb.active
         order = []
         for coll in sheet_ranges["C32":"V32"]:
@@ -54,17 +54,18 @@ class Book:
                     counter_col = 0
                 self.counter_row += 1
             else:
-                wb.close()
+                gc.collect()  # Чистим мусор
+                wb.close()  # Закрываем книгу
                 break
         return book
 
     def create_new_book(self, data: dict[str]) -> None:
         wb_new = Workbook()
+
         sheet = wb_new.active
         sheet.title = "Сводный отчет"
         for k, v in data.items():
             sheet[k] = v
-
         wb_new.save("report.xlsx")
 
 
@@ -73,14 +74,15 @@ def main():
 
     bk = Book()
     # file_list = find_xlsx_files(os.getcwd())
-    file_list = find_xlsx_files(r'C:\Projects\auto_exc\data')
+    file_list = find_xlsx_files(r"C:\Projects\auto_exc\data")
     for path in tqdm(file_list):
         data.update(bk.set_book(path))
+
     bk.create_new_book(data)
 
 
 if __name__ == "__main__":
     try:
         main()
-    except:
-        pause(10)
+    except Exception as e:
+        print(f"Ошибка {e}")
