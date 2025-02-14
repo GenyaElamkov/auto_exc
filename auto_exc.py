@@ -73,11 +73,11 @@ def main():
     data = {}
 
     bk = Book()
-    # file_list = find_xlsx_files(os.getcwd())
-    file_list = find_xlsx_files(r"C:\Projects\auto_exc\data")
+    file_list = find_xlsx_files(os.getcwd())
+    # file_list = find_xlsx_files(r"C:\Projects\auto_exc\data_1")
     for path in tqdm(file_list):
         data.update(bk.set_book(path))
-
+    
     bk.create_new_book(data)
 
 
