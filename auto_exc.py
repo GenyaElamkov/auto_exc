@@ -34,9 +34,10 @@ class Book:
                 order.append(cell.value)
         order = "".join(order)
 
-        id_cell = 45
+        id_cell = 43
         counter_col = 0  # Счетчик для col
-        book = {}
+        # book = {}
+        book = []
 
         while True:
             id_cell += 1
@@ -45,14 +46,18 @@ class Book:
 
             if sheet_ranges[id_coll_start].value is not None:
                 for coll in sheet_ranges[id_coll_start:id_coll_end]:
+                    tmp_dt = []
                     for cell in coll:
-                        coordinate = self._cuts_numbers(cell.coordinate)
-                        book.setdefault(f"{coordinate}{self.counter_row}", cell.value)
-                        counter_col += 1
-                    book.setdefault(f"AW{self.counter_row}", order)
+                        # coordinate = self._cuts_numbers(cell.coordinate)
+                        # book.setdefault(f"{coordinate}{self.counter_row}", cell.value)
+                        tmp_dt.append(cell.value)
+                        # counter_col += 1
+                    # book.setdefault(f"AW{self.counter_row}", order)
 
-                    counter_col = 0
-                self.counter_row += 1
+                    # counter_col = 0
+                # self.counter_row += 1
+                book.append(tmp_dt)
+                tmp_dt = []
             else:
                 gc.collect()  # Чистим мусор
                 wb.close()  # Закрываем книгу
@@ -73,12 +78,16 @@ def main():
     data = {}
 
     bk = Book()
-    file_list = find_xlsx_files(os.getcwd())
-    # file_list = find_xlsx_files(r"C:\Projects\auto_exc\data_1")
-    for path in tqdm(file_list):
-        data.update(bk.set_book(path))
-    
-    bk.create_new_book(data)
+    # file_list = find_xlsx_files(os.getcwd())
+    # file_list = find_xlsx_files("test_file.xlsx")
+    # for path in tqdm(file_list):
+        # data.update(bk.set_book(path))
+
+    # C:\Users\Admin\Desktop\data_1\test_bif_file.xlsx
+    filename = r'C:\Users\Admin\Desktop\data_1\test_bif_file.xlsx'
+    # filename = r"C:\Projects\auto_exc\tets_file.xlsx"
+    print(bk.set_book(filename))
+    # bk.create_new_book(data)
 
 
 if __name__ == "__main__":
