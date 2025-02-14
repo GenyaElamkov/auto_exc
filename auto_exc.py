@@ -34,7 +34,7 @@ class Book:
                 order.append(cell.value)
         order = "".join(order)
 
-        id_cell = 43
+        id_cell = 45
         counter_col = 0  # Счетчик для col
         book = {}
 
