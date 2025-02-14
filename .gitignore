@@ -143,3 +143,5 @@ data/VYPISKA_42104810125630000245_2024-04-15_2024-04-18.xlsx
 test.py
 report.xlsx
 tets_file.xlsx
+report_big_file.xlsx
+~$tets_file.xlsx
