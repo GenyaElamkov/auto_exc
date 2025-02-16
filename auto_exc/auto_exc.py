@@ -10,7 +10,7 @@ from openpyxl import Workbook, load_workbook
 def find_xlsx_files(directory: str) -> list:
     """Формирует список path где лежат файлы excel"""
     return [
-        f"{directory}\\{file}"
+        os.path.join(directory, file)
         for file in os.listdir(directory)
         if file.endswith(".xlsx")
     ]
