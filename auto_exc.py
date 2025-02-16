@@ -1,9 +1,9 @@
 import os
 import gc
-import threading
+import warnings
 
+from multiprocessing import Pool, freeze_support
 
-from tqdm import tqdm
 from openpyxl import Workbook, load_workbook
 
 
@@ -29,21 +29,24 @@ class Book:
         return "".join([char for char in text if not char.isdigit()])
 
     def reed_book(self, filename: str) -> dict[str]:
-        wb = load_workbook(filename=filename, read_only=True)
-        # read_only — режим для отложенной загрузки, экономить оперативную память
-        sheet_ranges = wb.active
-        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            wb = load_workbook(filename=filename, read_only=True)
+            # read_only — режим для отложенной загрузки, экономить оперативную память
+
+            sheet_ranges = wb.active
+
         book = {}
-        organization = sheet_ranges['B25'].value
-        
+        organization = sheet_ranges["B25"].value
+
         order = []
         for coll in sheet_ranges["C32":"V32"]:
             for cell in coll:
                 order.append(cell.value)
         order = "".join(order)
 
-        id_cell = 43        # Счетчик для row обработки таблицы
-        counter_col = 0     # Счетчик для col
+        id_cell = 43  # Счетчик для row обработки таблицы
         while True:
             id_cell += 1
             id_coll_start = f"A{id_cell}"
@@ -53,11 +56,9 @@ class Book:
                 for coll in sheet_ranges[id_coll_start:id_coll_end]:
                     for cell in coll:
                         coordinate = self._cuts_numbers(cell.coordinate)
-                        book.setdefault(f"{coordinate}{self.counter_row}", cell.value)
-                        counter_col += 1
-                    book.setdefault(f"AW{self.counter_row}", order)
-                    book.setdefault(f"AX{self.counter_row}", organization)
-                    counter_col = 0
+                        book[f"{coordinate}{self.counter_row}"] = cell.value
+                    book[f"AW{self.counter_row}"] = order
+                    book[f"AX{self.counter_row}"] = organization
                 self.counter_row += 1
             else:
                 self.counter_row = 1
@@ -77,26 +78,38 @@ class Book:
         wb_new.close()
 
 
-def main(path, name_directory):
-    bk = Book()
-    data = bk.reed_book(path)
-    path_directory = f"{name_directory}\\{path.split("\\")[-1]}"
-    bk.create_new_book(data, file_name=path_directory)
+def worker(path: str, name_directory) -> str | None:
+    try:
+        bk = Book()
+        data = bk.reed_book(path)
+        path_directory = f"{name_directory}\\{path.split("\\")[-1]}"
+        bk.create_new_book(data, file_name=path_directory)
+        return f"Файл создан: {path_directory}"
+    except Exception as e:
+        return f"Ошибка при обработке файла {path}: {e}"
+
+
+def main():
+    name_directory = "00_Data"
+    create_directory(name_directory)
+    file_list = find_xlsx_files(os.getcwd())
+
+    print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов:")
+    total_files = len(file_list)
+    processed_files = 1
+    with Pool() as pool:
+        results = []
+        results = pool.starmap(worker, [(path, name_directory) for path in file_list])
+
+        for result in results:
+            print(f"Обработано файлов: {processed_files}/{total_files}")
+            processed_files += 1
+            print(result)
+
+    # Пауза, чтобы консоль не закрывалась
+    input("\nНажмите Enter для выхода...")
 
 
 if __name__ == "__main__":
-    try:
-        name_directory = "00_Data"
-        create_directory(name_directory)
-        file_list = find_xlsx_files(os.getcwd())
-        theards = []
-        for path in tqdm(file_list):
-            th = threading.Thread(target=main, args=(path, name_directory), daemon=True)
-            th.start()
-            theards.append(th)
-
-        for th in tqdm(theards):
-            th.join()
-
-    except Exception as e:
-        print(f"Ошибка {e}")
+    freeze_support()
+    main()
