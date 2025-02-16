@@ -83,7 +83,7 @@ def worker(path: str, name_directory: str) -> str | None:
     try:
         bk = Book()
         data = bk.reed_book(path)
-        path_directory = f"{name_directory}\\{path.split("\\")[-1]}"
+        path_directory = os.path.join(name_directory, os.path.basename(path))
         bk.create_new_book(data, file_name=path_directory)
         return f"Файл создан: {path_directory}"
     except Exception as e:
