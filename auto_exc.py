@@ -16,7 +16,7 @@ def find_xlsx_files(directory: str) -> list:
     ]
 
 
-def create_directory(name: str):
+def create_directory(name: str) -> None:
     os.makedirs(name, exist_ok=True)
 
 
@@ -24,11 +24,12 @@ class Book:
     def __init__(self) -> None:
         self.counter_row = 1  # Счетчик для row
 
-    def _cuts_numbers(self, text: str):
+    def _cuts_numbers(self, text: str) -> str:
         """Обрезает цифры, оставляет буквы для Ячеек"""
         return "".join([char for char in text if not char.isdigit()])
 
     def reed_book(self, filename: str) -> dict[str]:
+        # Убираем предупреждение
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
@@ -78,7 +79,7 @@ class Book:
         wb_new.close()
 
 
-def worker(path: str, name_directory) -> str | None:
+def worker(path: str, name_directory: str) -> str | None:
     try:
         bk = Book()
         data = bk.reed_book(path)
@@ -89,7 +90,7 @@ def worker(path: str, name_directory) -> str | None:
         return f"Ошибка при обработке файла {path}: {e}"
 
 
-def main():
+def main() -> None:
     name_directory = "00_Data"
     create_directory(name_directory)
     file_list = find_xlsx_files(os.getcwd())
@@ -97,7 +98,7 @@ def main():
     print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов:")
     total_files = len(file_list)
     processed_files = 1
-    with Pool() as pool:
+    with Pool(os.cpu_count()) as pool:
         results = []
         results = pool.starmap(worker, [(path, name_directory) for path in file_list])
 
