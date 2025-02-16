@@ -15,14 +15,15 @@
 2. Клонируйте репозиторий:
 
    ```bash
-   git clone https://github.com/ваш-username/ваш-репозиторий.git
-   cd ваш-репозиторий
+   git clone https://github.com/GenyaElamkov/auto_exc.git
+   cd auto_exc.git
    ```
 
 3. Установите необходимые зависимости:
 
    ```bash
-   pip install -r requirements.txt
+   pip install poetry
+   poetry update
    ```
 
 ## Использование
@@ -31,7 +32,7 @@
 2. Запустите скрипт:
 
    ```bash
-   python main.py
+   python auto_exc.py
    ```
 
 3. После завершения обработки результаты будут сохранены в папке `00_Data`.
@@ -39,11 +40,13 @@
 ### Пример структуры проекта
 
 ```
-ваш-репозиторий/
+auto_ex/
 ├── 00_Data/               # Папка с обработанными файлами (создается автоматически)
-├── auto_exc.py            # Основной скрипт для запуска
+├── auto_ex/auto_exc.py    # Основной скрипт для запуска
 ├── README.md              # Этот файл
-├── requirements.txt       # Файл с зависимостями
+├── LICRNSE                # Этот файл
+├── poetry.lock            # Этот файл
+├── poetry.toml            # Файл с зависимостями
 └── example_files/         # Примеры файлов для обработки (опционально)
 ```
 
