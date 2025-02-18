@@ -56,13 +56,13 @@ class Book:
             if sheet_ranges[id_coll_start].value is not None:
                 for coll in sheet_ranges[id_coll_start:id_coll_end]:
                     for cell in coll:
-                        coordinate = self._cuts_numbers(cell.coordinate)
-                        book[f"{coordinate}{self.counter_row}"] = cell.value
+                        if cell.value is not None:
+                            coordinate = self._cuts_numbers(cell.coordinate)
+                            book[f"{coordinate}{self.counter_row}"] = cell.value
                     book[f"AW{self.counter_row}"] = order
                     book[f"AX{self.counter_row}"] = organization
                 self.counter_row += 1
             else:
-                self.counter_row = 1
                 gc.collect()  # Чистим мусор
                 wb.close()  # Закрываем книгу
                 break
@@ -94,6 +94,7 @@ def main() -> None:
     name_directory = "00_Data"
     create_directory(name_directory)
     file_list = find_xlsx_files(os.getcwd())
+    # file_list = find_xlsx_files(r"C:\Projects\auto_exc\example_files")
 
     print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов:")
     total_files = len(file_list)
