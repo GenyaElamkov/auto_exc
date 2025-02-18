@@ -1,82 +1,77 @@
 import os
-import gc
 import csv
+import time
+import gc
 import warnings
 import pandas as pd
 
+from contextlib import contextmanager
 from multiprocessing import Pool, freeze_support
 
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
+
+
+@contextmanager
+def timer():
+    start_time = time.perf_counter()
+    yield
+    end_time = time.perf_counter()
+    execution_time = end_time - start_time
+    print(f"Скрипт выполнялся {execution_time:.4f} секунд")
+    # Пауза, чтобы консоль не закрывалась
+    input("\nНажмите Enter для выхода...")
 
 
 class Book:
-    def _cuts_numbers(self, text: str) -> str:
-        """Обрезает цифры, оставляет буквы для Ячеек"""
-        return "".join([char for char in text if not char.isdigit()])
 
     def reed_book(self, filename: str) -> list[dict[str]]:
-        # Убираем предупреждение
+        # Убираем предупреждение в консоле
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
             wb = load_workbook(filename=filename, read_only=True)
             # read_only — режим для отложенной загрузки, экономить оперативную память
-
             sheet_ranges = wb.active
 
-        book = {}
         organization = sheet_ranges["B25"].value
 
-        order = []
-        for coll in sheet_ranges["C32":"V32"]:
-            for cell in coll:
-                order.append(str(cell.value))
-        order = "".join(order)
+        order = "".join(
+            str(cell.value) for coll in sheet_ranges["C32":"V32"] for cell in coll
+        )
 
-        id_cell = 43  # Счетчик для row обработки таблицы
         book_csv = []
+        id_cell = 43  # Счетчик для row обработки таблицы
         while True:
             id_cell += 1
             id_coll_start = f"A{id_cell}"
 
-            if sheet_ranges[id_coll_start].value is not None:
-                book["№"] = sheet_ranges[f"A{id_cell}"].value
-                book["дата_старт"] = sheet_ranges[f"B{id_cell}"].value
-                book["дата_end"] = sheet_ranges[f"E{id_cell}"].value
-                book["вид"] = sheet_ranges[f"H{id_cell}"].value
-                book["номер"] = sheet_ranges[f"J{id_cell}"].value
-                book["дата_реквизита"] = sheet_ranges[f"M{id_cell}"].value
-                book["номер_кор"] = sheet_ranges[f"P{id_cell}"].value
-                book["наименование"] = sheet_ranges[f"S{id_cell}"].value
-                book["бик"] = sheet_ranges[f"V{id_cell}"].value
-                book["фио"] = sheet_ranges[f"Y{id_cell}"].value
-                book["инн"] = sheet_ranges[f"AB{id_cell}"].value
-                book["кпп"] = sheet_ranges[f"AE{id_cell}"].value
-                book["номер_счета"] = sheet_ranges[f"AH{id_cell}"].value
-                book["дебет"] = sheet_ranges[f"AK{id_cell}"].value
-                book["кредит"] = sheet_ranges[f"AN{id_cell}"].value
-                book["назначение"] = sheet_ranges[f"AQ{id_cell}"].value
-                book["ордер"] = order
-                book["организация"] = organization
-                book_csv.append(book)
-                book = {}
-            else:
+            if sheet_ranges[id_coll_start].value is None:
                 gc.collect()  # Чистим мусор
                 wb.close()  # Закрываем книгу
                 break
 
+            row = {
+                "№": sheet_ranges[f"A{id_cell}"].value,
+                "дата_старт": sheet_ranges[f"B{id_cell}"].value,
+                "дата_end": sheet_ranges[f"E{id_cell}"].value,
+                "вид": sheet_ranges[f"H{id_cell}"].value,
+                "номер": sheet_ranges[f"M{id_cell}"].value,
+                "номер_кор": sheet_ranges[f"P{id_cell}"].value,
+                "наименование": sheet_ranges[f"S{id_cell}"].value,
+                "бик": sheet_ranges[f"V{id_cell}"].value,
+                "фио": sheet_ranges[f"Y{id_cell}"].value,
+                "инн": sheet_ranges[f"AB{id_cell}"].value,
+                "кпп": sheet_ranges[f"AE{id_cell}"].value,
+                "номер_счета": sheet_ranges[f"AH{id_cell}"].value,
+                "дебет": sheet_ranges[f"AK{id_cell}"].value,
+                "кредит": sheet_ranges[f"AN{id_cell}"].value,
+                "назначение": sheet_ranges[f"AQ{id_cell}"].value,
+                "ордер": order,
+                "организация": organization,
+            }
+            book_csv.append(row)
+
         return book_csv
-
-    def create_new_book(self, data: dict[str], file_name: str) -> None:
-        """Создает книгу для xlsx"""
-        wb_new = Workbook()
-
-        sheet = wb_new.active
-        sheet.title = "Сводный отчет"
-        for k, v in data.items():
-            sheet[k] = v
-        wb_new.save(file_name)
-        wb_new.close()
 
     def save_book_csv(self, data: list[dict[str]], file_name: str) -> None:
         with open(f"{file_name}.csv", "w", newline="", encoding="utf-8") as csv_file:
@@ -122,8 +117,28 @@ def merge_csv_to_xlsx(input_directory: str, output_filename: str) -> None:
     save_to_xlsx(combined_data, output_filename)  # Сохранение в XLSX
 
 
-def delete_csv_files_directory(name_directory: str):
-    os.unlink()
+def clear_csv_files(directory: str) -> None:
+    """
+    Удаляет все CSV файлы в указанной директории.
+    :param directory: Путь к директории, в которой нужно очистить CSV файлы.
+    """
+    if not os.path.exists(directory):
+        print(f"Директория {directory} не существует.")
+        return
+
+    # Фильтруем только CSV файлы
+    files_path = _find_files(directory, extension=".csv")
+    if not files_path:
+        print(f"В директории {directory} нет CSV файлов для удаления.")
+        return
+
+    # Удаляем каждый CSV файл
+    for file_path in files_path:
+        try:
+            os.remove(file_path)
+            print(f"Файл {file_path} успешно удален.")
+        except Exception as e:
+            print(f"Ошибка при удалении файла {file_path}: {e}")
 
 
 def worker(path: str, name_directory: str) -> str | None:
@@ -131,52 +146,22 @@ def worker(path: str, name_directory: str) -> str | None:
         bk = Book()
         data = bk.reed_book(path)
         path_directory = os.path.join(name_directory, os.path.basename(path))
-        # bk.create_new_book(data, file_name=path_directory)
         bk.save_book_csv(data, file_name=path_directory)
         return f"Файл создан: {path_directory}"
     except Exception as e:
         return f"Ошибка при обработке файла {path}: {e}"
 
 
-def clear_csv_files(directory: str) -> None:
-    """
-    Удаляет все CSV файлы в указанной директории.
-
-    :param directory: Путь к директории, в которой нужно очистить CSV файлы.
-    """
-    if not os.path.exists(directory):
-        print(f"Директория {directory} не существует.")
-        return
-
-    # Получаем список всех файлов в директории
-    files = os.listdir(directory)
-
-    # Фильтруем только CSV файлы
-    csv_files = [file for file in files if file.endswith(".csv")]
-
-    if not csv_files:
-        print(f"В директории {directory} нет CSV файлов для удаления.")
-        return
-
-    # Удаляем каждый CSV файл
-    for csv_file in csv_files:
-        file_path = os.path.join(directory, csv_file)
-        try:
-            os.remove(file_path)
-            print(f"Файл {csv_file} успешно удален.")
-        except Exception as e:
-            print(f"Ошибка при удалении файла {csv_file}: {e}")
-
-
 def main() -> None:
     name_directory = "00_Data"
     create_directory(name_directory)
-    # file_list = find_files(os.getcwd(), extension="csv")
-    file_list = _find_files(r"C:\Projects\auto_exc\example_files", extension=".xlsx")
+    file_list = _find_files(os.getcwd(), extension=".xlsx")
+    # file_list = _find_files(r"C:\Projects\auto_exc\example_files", extension=".xlsx")
 
-    print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов:")
+    print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов...")
     total_files = len(file_list)
     processed_files = 1
+
     with Pool(os.cpu_count()) as pool:
         results = []
         results = pool.starmap(worker, [(path, name_directory) for path in file_list])
@@ -185,18 +170,16 @@ def main() -> None:
             print(f"Обработано файлов: {processed_files}/{total_files}")
             processed_files += 1
             print(result)
-    print("Обработка файлов завершена успешна. Следующий этап — Объединение данных")
-    # os.system('cls||clear')
 
+    print("Обработка файлов завершена успешна. Следующий этап — Объединение данных")
     output_filename = os.path.join(name_directory, "combined_data.xlsx")
     merge_csv_to_xlsx(name_directory, output_filename)
 
     print("Следующий этап — Очистка файлов")
     clear_csv_files(name_directory)
-    # Пауза, чтобы консоль не закрывалась
-    input("\nНажмите Enter для выхода...")
 
 
 if __name__ == "__main__":
-    freeze_support()
-    main()
+    with timer():
+        freeze_support()
+        main()
