@@ -13,6 +13,7 @@ from openpyxl import load_workbook
 
 @contextmanager
 def timer():
+    """Измеряет время работы скрипта"""
     start_time = time.perf_counter()
     yield
     end_time = time.perf_counter()
@@ -34,7 +35,6 @@ class Book:
             sheet_ranges = wb.active
 
         organization = sheet_ranges["B25"].value
-
         order = "".join(
             str(cell.value) for coll in sheet_ranges["C32":"V32"] for cell in coll
         )
@@ -74,6 +74,7 @@ class Book:
         return book_csv
 
     def save_book_csv(self, data: list[dict[str]], file_name: str) -> None:
+        """Сохраняет данные в файл с раширением .csv"""
         with open(f"{file_name}.csv", "w", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=data[0].keys())
             writer.writeheader()
@@ -90,6 +91,7 @@ def _find_files(directory: str, extension: str) -> list:
 
 
 def create_directory(name: str) -> None:
+    """Создает директорию"""
     os.makedirs(name, exist_ok=True)
 
 
