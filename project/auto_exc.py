@@ -4,6 +4,7 @@ import time
 import gc
 import warnings
 import pandas as pd
+from colorama import init, Fore
 
 from contextlib import contextmanager
 from multiprocessing import Pool, freeze_support
@@ -149,16 +150,21 @@ def worker(path: str, name_directory: str) -> str | None:
         data = bk.reed_book(path)
         path_directory = os.path.join(name_directory, os.path.basename(path))
         bk.save_book_csv(data, file_name=path_directory)
+
+        # Удаляем отработанный файл
+        file_name = os.path.basename(path)
+        if file_name in os.listdir(os.getcwd()):
+            os.remove(file_name)
+
         return f"Файл создан: {path_directory}"
     except Exception as e:
         return f"Ошибка при обработке файла {path}: {e}"
 
 
-def main() -> None:
-    name_directory = "00_Data"
+def processing(name_directory: str) -> None:
+    """Общая функция для обработки данных"""
     create_directory(name_directory)
     file_list = _find_files(os.getcwd(), extension=".xlsx")
-    # file_list = _find_files(r"C:\Projects\auto_exc\example_files", extension=".xlsx")
 
     print(f"Всего файлов в директории {len(file_list)}. Идет обработка файлов...")
     total_files = len(file_list)
@@ -173,12 +179,53 @@ def main() -> None:
             processed_files += 1
             print(result)
 
-    print("Обработка файлов завершена успешна. Следующий этап — Объединение данных")
+
+def single_file_connection(name_directory: str) -> None:
+    """Общая функция для объединения файлов в один xlsx"""
     output_filename = os.path.join(name_directory, "combined_data.xlsx")
     merge_csv_to_xlsx(name_directory, output_filename)
 
     print("Следующий этап — Очистка файлов")
     clear_csv_files(name_directory)
+
+
+def main() -> None:
+    init()
+    print(
+        Fore.RED
+        + """
+        [!] ОБЯЗАТЕЛЬНО СДЕЛАЙТЕ КОПИИ ФАЙЛОВ. 
+        [!] ОБРАБОТАННЫЕ ФАЙЛЫ БУДУТ УДАЛЕНЫ
+        """
+    )
+    print(
+        Fore.RESET
+        + """
+    Выберите:
+    1. Автоматический режим
+    
+    Ручной режим:
+    2. Обработка файлов
+    3. Объединение данных в один файл
+    """
+    )
+
+    name_directory = "00_Data"
+    while True:
+        choice = input("\nВыберите цифру (нажмите Enter для подтверждения):")
+        if choice == "1":
+            processing(name_directory)
+            single_file_connection(name_directory)
+            print("\n[!] УСПЕШНО. НАСЛАЖДАЙТЕСЬ РЕЗУЛЬТАТОМ")
+        elif choice == "2":
+            processing(name_directory)
+            print(
+                "Обработка файлов завершена успешна. Следующий этап — Объединение данных"
+            )
+        elif choice == "3":
+            single_file_connection(name_directory)
+        else:
+            break
 
 
 if __name__ == "__main__":
