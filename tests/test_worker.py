@@ -9,7 +9,7 @@ from tests.fixtures import tmp_excel_file
 
 # Добавляем корневую директорию в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from project.auto_exc import worker
+from src.auto_exc import worker
 
 
 # Тест для worker

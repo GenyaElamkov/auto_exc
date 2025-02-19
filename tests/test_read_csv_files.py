@@ -8,7 +8,7 @@ from tests.fixtures import tmp_csv_files
 
 # Добавляем корневую директорию в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from project.auto_exc import read_csv_files
+from src.auto_exc import read_csv_files
 
 
 # Тест для объединения CSV
