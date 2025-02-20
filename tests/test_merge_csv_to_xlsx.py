@@ -1,7 +1,5 @@
 import os
 import sys
-import pytest
-import csv
 
 import pandas as pd
 

@@ -1,8 +1,5 @@
 import os
 import sys
-import pytest
-import csv
-
 
 from tests.fixtures import tmp_csv_files
 

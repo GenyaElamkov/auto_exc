@@ -1,9 +1,5 @@
 import os
 import sys
-import pytest
-import csv
-from openpyxl import Workbook
-
 
 from tests.fixtures import tmp_excel_file
 
