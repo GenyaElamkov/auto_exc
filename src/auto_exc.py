@@ -26,7 +26,7 @@ def timer():
 
 class Book:
 
-    def reed_book(self, filename: str) -> list[dict[str]]:
+    def read_book(self, filename: str) -> list[dict[str]]:
         # Убираем предупреждение в консоле
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -144,10 +144,15 @@ def clear_csv_files(directory: str) -> None:
             print(f"Ошибка при удалении файла {file_path}: {e}")
 
 
-def worker(path: str, name_directory: str) -> str | None:
+def worker(path: str, name_directory: str) -> str | Exception:
+    """
+    Обрабатывает файл по указанному пути, сохраняет его данные в формате CSV
+    в заданную директорию и удаляет исходный файл (при условии его нахождения
+    в текущей рабочей директории
+    """
     try:
         bk = Book()
-        data = bk.reed_book(path)
+        data = bk.read_book(path)
         path_directory = os.path.join(name_directory, os.path.basename(path))
         bk.save_book_csv(data, file_name=path_directory)
 
