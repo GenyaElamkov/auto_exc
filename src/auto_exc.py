@@ -2,6 +2,7 @@ import os
 import csv
 import time
 import gc
+from typing import Generator, Any
 import warnings
 import pandas as pd
 from colorama import init, Fore
@@ -13,7 +14,7 @@ from openpyxl import load_workbook
 
 
 @contextmanager
-def timer():
+def timer() -> Generator[None, Any, None]:
     """Измеряет время работы скрипта"""
     start_time = time.perf_counter()
     yield
