@@ -37,7 +37,8 @@ class Book:
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-            # Чтение Excel-файла с помощью pandas
+                
+                # Чтение Excel-файла с помощью pandas
                 df = pd.read_excel(
                     filename,
                     sheet_name=0,
