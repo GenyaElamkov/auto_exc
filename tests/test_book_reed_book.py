@@ -9,9 +9,9 @@ from src.auto_exc import Book
 
 
 # Тест для класса Book
-def test_book_reed_book(tmp_excel_file):
+def test_book_read_book(tmp_excel_file):
     book = Book()
-    data = book.reed_book(str(tmp_excel_file))
+    data = book.read_book(str(tmp_excel_file))
 
     assert len(data) == 1
     assert data[0]["организация"] == "Test Organization"
