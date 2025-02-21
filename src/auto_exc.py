@@ -2,6 +2,8 @@ import os
 import csv
 import time
 from typing import Generator, List, Dict, Any
+
+import warnings
 import pandas as pd
 from colorama import init, Fore
 
@@ -30,14 +32,18 @@ class Book:
         :param filename: Путь к Excel-файлу.
         :return: Список словарей с данными из файла.
         """
+        
+        
         try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
             # Чтение Excel-файла с помощью pandas
-            df = pd.read_excel(
-                filename,
-                sheet_name=0,
-                header=None,
-                usecols="A:AR",  # Читаем только нужные колонки (A до AR)
-            )
+                df = pd.read_excel(
+                    filename,
+                    sheet_name=0,
+                    header=None,
+                    usecols="A:AR",  # Читаем только нужные колонки (A до AR)
+                )
 
             # Получаем значения из конкретных ячеек (например, организация и ордер)
             organization = df.iloc[24, 1]  # B25
