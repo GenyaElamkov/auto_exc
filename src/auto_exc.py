@@ -1,16 +1,12 @@
 import os
 import csv
 import time
-import gc
-from typing import Generator, Any
-import warnings
+from typing import Generator, List, Dict, Any
 import pandas as pd
 from colorama import init, Fore
 
 from contextlib import contextmanager
 from multiprocessing import Pool, freeze_support
-
-from openpyxl import load_workbook
 
 
 @contextmanager
@@ -27,53 +23,64 @@ def timer() -> Generator[None, Any, None]:
 
 class Book:
 
-    def read_book(self, filename: str) -> list[dict[str]]:
-        # Убираем предупреждение в консоле
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+    def read_book(self, filename: str) -> List[Dict[str, Any]]:
+        """
+        Читает данные из Excel-файла и возвращает список словарей с данными.
 
-            wb = load_workbook(filename=filename, read_only=True)
-            # read_only — режим для отложенной загрузки, экономить оперативную память
-            sheet_ranges = wb.active
+        :param filename: Путь к Excel-файлу.
+        :return: Список словарей с данными из файла.
+        """
+        try:
+            # Чтение Excel-файла с помощью pandas
+            df = pd.read_excel(
+                filename,
+                sheet_name=0,
+                header=None,
+                usecols="A:AR",  # Читаем только нужные колонки (A до AR)
+            )
 
-        organization = sheet_ranges["B25"].value
-        order = "".join(
-            str(cell.value) for coll in sheet_ranges["C32":"V32"] for cell in coll
-        )
+            # Получаем значения из конкретных ячеек (например, организация и ордер)
+            organization = df.iloc[24, 1]  # B25
+            order = "".join(str(int(cell)) for cell in df.iloc[31, 2:22]) if len(df) > 31 else ""  # C32:V32
+            # Обрабатываем строки данных
+            book_csv = []
+            for i in range(43, len(df)):
+                row_data = df.iloc[i]  # Получаем строку данных
+                
+                # Проверяем, есть ли данные в первой колонке (A)
+                # Если первая колонка пустая, завершаем обработку
+                if pd.isna(row_data[0]):
+                    break
 
-        book_csv = []
-        id_cell = 43  # Счетчик для row обработки таблицы
-        while True:
-            id_cell += 1
-            id_coll_start = f"A{id_cell}"
+                # Формируем словарь с данными
+                row = {
+                    "№": row_data[0],  # A
+                    "дата_старт": row_data[1],  # B
+                    "дата_end": row_data[4],  # E
+                    "вид": row_data[7],  # H
+                    "номер": row_data[9],  # J
+                    "дата": row_data[12],  # M
+                    "номер_кор": row_data[15],  # P
+                    "наименование": row_data[18],  # S
+                    "бик": row_data[21],  # V
+                    "фио": row_data[24],  # Y
+                    "инн": row_data[27],  # AB
+                    "кпп": row_data[30],  # AE
+                    "номер_счета": row_data[33],  # AH
+                    "дебет": row_data[36],  # AK
+                    "кредит": row_data[39],  # AN
+                    "назначение": row_data[42],  # AQ
+                    "ордер": order,
+                    "организация": organization,
+                }
 
-            if sheet_ranges[id_coll_start].value is None:
-                gc.collect()  # Чистим мусор
-                wb.close()  # Закрываем книгу
-                break
+                book_csv.append(row)
 
-            row = {
-                "№": sheet_ranges[f"A{id_cell}"].value,
-                "дата_старт": sheet_ranges[f"B{id_cell}"].value,
-                "дата_end": sheet_ranges[f"E{id_cell}"].value,
-                "вид": sheet_ranges[f"H{id_cell}"].value,
-                "номер": sheet_ranges[f"M{id_cell}"].value,
-                "номер_кор": sheet_ranges[f"P{id_cell}"].value,
-                "наименование": sheet_ranges[f"S{id_cell}"].value,
-                "бик": sheet_ranges[f"V{id_cell}"].value,
-                "фио": sheet_ranges[f"Y{id_cell}"].value,
-                "инн": sheet_ranges[f"AB{id_cell}"].value,
-                "кпп": sheet_ranges[f"AE{id_cell}"].value,
-                "номер_счета": sheet_ranges[f"AH{id_cell}"].value,
-                "дебет": sheet_ranges[f"AK{id_cell}"].value,
-                "кредит": sheet_ranges[f"AN{id_cell}"].value,
-                "назначение": sheet_ranges[f"AQ{id_cell}"].value,
-                "ордер": order,
-                "организация": organization,
-            }
-            book_csv.append(row)
+            return book_csv
 
-        return book_csv
+        except Exception as e:
+            print(f"Ошибка при чтении файла {filename}: {e}")
+            return []
 
     def save_book_csv(self, data: list[dict[str]], file_name: str) -> None:
         """Сохраняет данные в файл с раширением .csv"""
@@ -101,7 +108,7 @@ def read_csv_files(directory: str) -> pd.DataFrame:
     """Читает все CSV файлы в директории и возвращает объединенный DataFrame."""
     combined_data = pd.DataFrame()  # Пустой DataFrame для объединенных данных
     for file_path in _find_files(directory, extension=".csv"):
-        df = pd.read_csv(file_path, encoding="utf-8")  # Чтение CSV файла
+        df = pd.read_csv(file_path, encoding="utf-8")
         combined_data = pd.concat(
             [combined_data, df], ignore_index=True
         )  # Объединение данных
