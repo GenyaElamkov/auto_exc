@@ -35,6 +35,7 @@ class Book:
         
         
         try:
+            # Убираем предупреждения об отсустия style в console
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 
@@ -61,22 +62,22 @@ class Book:
 
                 # Формируем словарь с данными
                 row = {
-                    "№": row_data[0],  # A
-                    "дата_старт": row_data[1],  # B
-                    "дата_end": row_data[4],  # E
-                    "вид": row_data[7],  # H
-                    "номер": row_data[9],  # J
-                    "дата": row_data[12],  # M
-                    "номер_кор": row_data[15],  # P
-                    "наименование": row_data[18],  # S
-                    "бик": row_data[21],  # V
-                    "фио": row_data[24],  # Y
-                    "инн": row_data[27],  # AB
-                    "кпп": row_data[30],  # AE
-                    "номер_счета": row_data[33],  # AH
-                    "дебет": row_data[36],  # AK
-                    "кредит": row_data[39],  # AN
-                    "назначение": row_data[42],  # AQ
+                    "№": row_data[0],               # A
+                    "дата_старт": row_data[1],      # B
+                    "дата_end": row_data[4],        # E
+                    "вид": row_data[7],             # H
+                    "номер": row_data[9],           # J
+                    "дата": row_data[12],           # M
+                    "номер_кор": row_data[15],      # P
+                    "наименование": row_data[18],   # S
+                    "бик": row_data[21],            # V
+                    "фио": row_data[24],            # Y
+                    "инн": row_data[27],            # AB
+                    "кпп": row_data[30],            # AE
+                    "номер_счета": row_data[33],    # AH
+                    "дебет": row_data[36],          # AK
+                    "кредит": row_data[39],         # AN
+                    "назначение": row_data[42],     # AQ
                     "ордер": order,
                     "организация": organization,
                 }
@@ -250,5 +251,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     with timer():
-        freeze_support()
+        freeze_support()    # Решает проблему с многочисленным запуском скрипта на windows
         main()
