@@ -5,6 +5,7 @@ from typing import Generator, List, Dict, Any
 
 import warnings
 import pandas as pd
+from pandas.errors import EmptyDataError
 from colorama import init, Fore
 
 from contextlib import contextmanager
@@ -59,7 +60,7 @@ class Book:
                 # Если первая колонка пустая, завершаем обработку
                 if pd.isna(row_data[0]):
                     break
-
+                
                 # Формируем словарь с данными
                 row = {
                     "№": row_data[0],               # A
@@ -92,7 +93,7 @@ class Book:
 
     def save_book_csv(self, data: list[dict[str]], file_name: str) -> None:
         """Сохраняет данные в файл с раширением .csv"""
-        with open(f"{file_name}.csv", "w", newline="", encoding="utf-8") as csv_file:
+        with open(f"{file_name}.csv", "w", newline="", encoding='utf-8', errors='replace') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=data[0].keys())
             writer.writeheader()
             writer.writerows(data)
@@ -115,11 +116,15 @@ def create_directory(name: str) -> None:
 def read_csv_files(directory: str) -> pd.DataFrame:
     """Читает все CSV файлы в директории и возвращает объединенный DataFrame."""
     combined_data = pd.DataFrame()  # Пустой DataFrame для объединенных данных
+    
     for file_path in _find_files(directory, extension=".csv"):
-        df = pd.read_csv(file_path, encoding="utf-8")
-        combined_data = pd.concat(
-            [combined_data, df], ignore_index=True
-        )  # Объединение данных
+        try:
+            df = pd.read_csv(file_path, encoding='utf-8')
+            combined_data = pd.concat(
+                [combined_data, df], ignore_index=True
+            )  # Объединение данных
+        except EmptyDataError:
+            print(f"No columns to parse from file {file_path}")
     return combined_data
 
 
@@ -169,6 +174,9 @@ def worker(path: str, name_directory: str) -> str | Exception:
     try:
         bk = Book()
         data = bk.read_book(path)
+        if not data:
+            return f"Файл {path} не содержит данных для обработки."
+        
         path_directory = os.path.join(name_directory, os.path.basename(path))
         bk.save_book_csv(data, file_name=path_directory)
 
@@ -204,8 +212,10 @@ def processing(name_directory: str) -> None:
 def single_file_connection(name_directory: str) -> None:
     """Общая функция для объединения файлов в один xlsx"""
     output_filename = os.path.join(name_directory, "combined_data.xlsx")
-    merge_csv_to_xlsx(name_directory, output_filename)
-
+    if _find_files(name_directory, extension='.csv'):
+        merge_csv_to_xlsx(name_directory, output_filename)
+    else:
+        print("Нет CSV-файлов для объединения.")
     print("Следующий этап — Очистка файлов")
     clear_csv_files(name_directory)
 
